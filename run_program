@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#----------------
+# Name          : run_program
+# Project       : renamer
+# Description   : Executes the renamer program suite
+# Author        : E Fournier
+# Example Usage : ./run_program
+#----------------
+
+run_program() {
+  "./_src/main.bash" "$@"
+}
+
+run_program "$@"
+

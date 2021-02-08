@@ -1,0 +1,174 @@
+#!/bin/bash
+
+#----------------
+# Name          : run_tests
+# Project       : renamer
+# Description   : Runs project test suite
+# Author        : E Fournier
+# Dependencies  : shunit2
+# Example Usage : ./run_tests
+#----------------
+
+print_header() {
+  local file="$1"
+
+  local filename=${file##*/}
+
+cat << EOF
+____
+TEST $filename
+
+EOF
+}
+
+run_test() {
+  local file="$1"
+
+  print_header "$file"
+
+  eval "$file"
+}
+
+run_crop_args_tests() {
+  local file="./_tests/args/crop_args_tests.bash"
+
+  run_test "$file"
+}
+
+run_doc_args_tests() {
+  local file="./_tests/args/doc_args_tests.bash"
+
+  run_test "$file"
+}
+
+run_help_args_tests() {
+  local file="./_tests/args/help_args_tests.bash"
+
+  run_test "$file"
+}
+
+run_mode_args_tests() {
+  local file="./_tests/args/mode_args_tests.bash"
+
+  run_test "$file"
+}
+
+run_photo_args_tests() {
+  local file="./_tests/args/photo_args_tests.bash"
+
+  run_test "$file"
+}
+
+run_preview_args_tests() {
+  local file="./_tests/args/preview_args_tests.bash"
+
+  run_test "$file"
+}
+
+run_verbose_args_tests() {
+  local file="./_tests/args/verbose_args_tests.bash"
+
+  run_test "$file"
+}
+
+run_user_select_tests() {
+  local file="./_tests/input/user_select_tests.bash"
+
+  run_test "$file"
+}
+
+run_help_tests() {
+  local file="./_tests/messages/help_tests.bash"
+
+  run_test "$file"
+}
+
+run_doc_mode_tests() {
+  local file="./_tests/modes/doc_mode_tests.bash"
+
+  run_test "$file"
+}
+
+run_photo_mode_tests() {
+  local file="./_tests/modes/photo_mode_tests.bash"
+
+  run_test "$file"
+}
+
+run_constants_tests() {
+  local file="./_tests/utils/constants_tests.bash"
+
+  run_test "$file"
+}
+
+run_fs_tests() {
+  local file="./_tests/utils/fs_tests.bash"
+
+  run_test "$file"
+}
+
+run_modes_tests() {
+  local file="./_tests/utils/modes_tests.bash"
+
+  run_test "$file"
+}
+
+run_time_tests() {
+  local file="./_tests/utils/time_tests.bash"
+
+  run_test "$file"
+}
+
+run_tests() {
+  local file_to_test="$1"
+  
+  if [[ "$file_to_test" == "crop_args" ]]; then
+    run_crop_args_tests
+  elif [[ "$file_to_test" == "doc_args" ]]; then
+    run_doc_args_tests
+  elif [[ "$file_to_test" == "help_args" ]]; then
+    run_help_args_tests
+  elif [[ "$file_to_test" == "mode_args" ]]; then
+    run_mode_args_tests
+  elif [[ "$file_to_test" == "photo_args" ]]; then
+    run_photo_args_tests
+  elif [[ "$file_to_test" == "preview_args" ]]; then
+    run_preview_args_tests
+  elif [[ "$file_to_test" == "verbose_args" ]]; then
+    run_verbose_args_tests
+  elif [[ "$file_to_test" == "user_select" ]]; then
+    run_user_select_tests
+  elif [[ "$file_to_test" == "help" ]]; then
+    run_help_tests
+  elif [[ "$file_to_test" == "doc_mode" ]]; then
+    run_doc_mode_tests
+  elif [[ "$file_to_test" == "photo_mode" ]]; then
+    run_photo_mode_tests
+  elif [[ "$file_to_test" == "constants" ]]; then
+    run_constants_tests
+  elif [[ "$file_to_test" == "fs" ]]; then
+    run_fs_tests
+  elif [[ "$file_to_test" == "modes" ]]; then
+    run_modes_tests
+  elif [[ "$file_to_test" == "time" ]]; then
+    run_time_tests
+  else
+    run_doc_args_tests
+    run_help_args_tests
+    run_mode_args_tests
+    run_photo_args_tests
+    run_preview_args_tests
+    run_verbose_args_tests
+    run_user_select_tests
+    run_help_tests
+    run_doc_mode_tests
+    run_photo_mode_tests
+    run_constants_tests
+    run_fs_tests
+    run_modes_tests
+    run_time_tests
+  fi
+}
+
+run_tests "$@"
+
