@@ -108,12 +108,6 @@ concatenate_files() {
       >> `get_concat_file_location "$output_name"`
 }
 
-delete_empty_lines() {
-  local output_name="$1"
-
-  sed -i '/^$/d' `get_concat_file_location $output_name`
-}
-
 main() {
   local output_name=`get_file_name`
   
@@ -123,7 +117,6 @@ main() {
   remove_empty_lines "$output_name"
   delete_sources     "$output_name"
   add_shebang        "$output_name"
-  delete_empty_lines "$output_name"
 
   printf "\nOutputted script file to `get_concat_file_location $output_name`\n"
 }
