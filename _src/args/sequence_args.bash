@@ -38,6 +38,11 @@ read_sequence_args() {
         local starting_index="$1"
         ;;
 
+      -pad | --padding )
+        shift
+        local prefix="$1"
+        ;;
+
     esac
     shift
   done
@@ -47,6 +52,6 @@ read_sequence_args() {
   [[ -z "$ext_out" ]] && local ext_out="$ext_in"
   [[ -z "$starting_index" ]] && local starting_index=0
 
-  echo "$prefix" "$ext_in" "$ext_out" "$starting_index"
+  echo "$prefix" "$ext_in" "$ext_out" "$starting_index" "$pad"
 }
 

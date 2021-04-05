@@ -1,0 +1,248 @@
+#!/bin/bash
+
+
+
+
+log_arguments() {
+  echo "FUNCTION: $@" >&2
+}
+
+
+
+error_missing_function_args() {
+  echo "ERROR: Arguments missing from called function [$@]"
+
+  exit
+}
+
+error_missing_required_arg() {
+  echo "ERROR: required argument not found [$@]"
+
+  exit
+}
+
+error_file_not_found() {
+  echo "ERROR: input file not found [$@]"
+
+  exit
+}
+
+error_dir_not_found() {
+  echo "ERROR: directory not found [$@]"
+
+  exit
+}
+
+error_device_not_found() {
+  echo "ERROR: Device not found in function [$@]"
+
+  exit
+}
+
+error_mode_not_found() {
+  echo "ERROR: Mode not found [$@]"
+
+  exit
+}
+
+error_pdf_file_not_found() {
+  echo "ERROR: PDF file not found [$@]"
+
+  exit
+}
+
+
+
+help_header() {
+cat << EOF
+_____
+SCANZ
+
+EOF
+}
+
+help_general() {
+cat << EOF
+_______
+GENERAL
+
+  -h, --help [mode]    print help information [for mode]
+
+  -m, --mode           enable mode [sequence]
+
+  -v, --verbose        enable verbose debugging info
+
+  -p, --preview        enable preview after scan
+  
+  USAGE: renamer -m sequence -h -v -p
+
+EOF
+}
+
+help_sequence() {
+cat << EOF
+________
+SEQUENCE
+
+  -i, --scanner        scanner device for input
+
+  -f, --format         format for scan
+
+  -q, --quality        scan qualiter [150, 300, 600]
+
+  -d, --output_dir     directory in which to save the capture
+
+  -o, --output_name    name for the scanned file
+
+  USAGE: renamer -m sequence -i jpg -o jpg -pr New_Name -si 1 -pad 3
+
+EOF
+}
+
+print_help_sequence() {
+  help_header
+  help_sequence
+}
+
+print_help_all() {
+  help_header
+  help_general
+  help_sequence
+}
+
+print_help_by_mode() {
+  local mode="$1"
+  
+  if [[ "$mode" == `sequence_mode_name` ]]; then
+    print_help_sequence
+  else
+    print_help_all
+  fi
+}
+
+
+
+sequence_mode_name() {
+  echo "sequence"
+}
+
+
+
+
+is_mode_known() {
+  local selected_mode="$1"
+
+  [[ -z "$selected_mode" ]] && error_missing_function_args "${FUNCNAME[0]}" "$@"
+
+  local known_modes=(\
+    `sequence_mode_name` \
+  )
+  
+  local is_known=false
+  for mode in "${known_modes[@]}"; do
+    [[ "$selected_mode" == "$mode" ]] && is_known=true
+  done
+  
+  echo "$is_known"
+}
+
+
+
+
+read_help_args() {
+  [[ "$VERBOSE" = true ]] && log_arguments "${FUNCNAME[0]}" "$@"
+
+  while [[ "$1" != "" ]]; do
+    case $1 in
+
+      -h | --help )
+        local should_show_help=true
+        ;;
+
+      -m | --mode )
+        shift
+        local mode=$1
+        ;;
+
+    esac
+    shift
+  done
+ 
+  if [[ "$should_show_help" == true ]]; then
+    print_help_by_mode "$mode"
+    exit
+  fi
+}
+
+
+
+
+read_mode_args() {
+  [[ "$VERBOSE" = true ]] && log_arguments "${FUNCNAME[0]}" "$@"
+  
+  while [[ "$1" != "" ]]; do
+    case $1 in
+
+      -m | --mode )
+        shift
+        local mode="$1"
+        ;;
+
+    esac
+    shift
+  done
+ 
+  [[ -z "$mode" ]] && error_missing_required_arg "mode" "${FUNCNAME[0]}"
+  [[ `is_mode_known "$mode"` == false ]] && error_mode_not_found "$mode" "${FUNCNAME[0]}"
+
+  echo "$mode"
+}
+
+
+
+
+
+read_verbose_args() {
+  [[ "$is_verbose" = true ]] && log_arguments "${FUNCNAME[0]}" "$@"
+
+  while [[ "$1" != "" ]]; do
+    case $1 in
+
+      -v | --verbose )
+        local is_verbose="true"
+        ;;
+
+    esac
+    shift
+  done
+ 
+  [[ -z "$is_verbose" ]] && local is_verbose="false"
+
+  echo "$is_verbose"
+}
+
+
+
+
+run_sequence_mode() {
+  sequence `read_sequence_args "$@"`
+}
+
+main() {
+  local is_verbose_enabled=`read_verbose_args "$@"`
+  [[ "$is_verbose_enabled" == true ]] && VERBOSE=true
+
+  local is_preview_enabled=`read_preview_args "$@"`
+  [[ "$is_preview_enabled" == true ]] && PREVIEW=true
+  
+  local mode=`read_mode_args "$@"`
+  read_help_args "$@"
+  if [[ "$mode" == `sequence_mode_name` ]]; then
+    run_sequence_mode "$@"
+  else
+    print_help_by_mode "$mode"
+  fi
+}
+
+main "$@"
+
