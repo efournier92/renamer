@@ -1,0 +1,286 @@
+#!/bin/bash
+
+error_missing_function_args() {
+  echo "ERROR: Arguments missing from called function [$@]"
+  exit
+}
+error_missing_required_arg() {
+  echo "ERROR: required argument not found [$@]"
+  exit
+}
+error_file_not_found() {
+  echo "ERROR: input file not found [$@]"
+  exit
+}
+error_dir_not_found() {
+  echo "ERROR: directory not found [$@]"
+  exit
+}
+error_device_not_found() {
+  echo "ERROR: Device not found in function [$@]"
+  exit
+}
+error_mode_not_found() {
+  echo "ERROR: Mode not found [$@]"
+  exit
+}
+error_pdf_file_not_found() {
+  echo "ERROR: PDF file not found [$@]"
+  exit
+}
+log_arguments() {
+  echo "FUNCTION: $@" >&2
+}
+help_header() {
+cat << EOF
+_____
+SCANZ
+EOF
+}
+help_general() {
+cat << EOF
+_______
+GENERAL
+  -h, --help [mode]    print help information [for mode]
+  -m, --mode           enable mode [sequence]
+  -v, --verbose        enable verbose debugging info
+  -p, --preview        enable preview after scan
+  
+  USAGE: renamer -m sequence -h -v -p
+EOF
+}
+help_sequence() {
+cat << EOF
+________
+SEQUENCE
+  -i, --scanner        scanner device for input
+  -f, --format         format for scan
+  -q, --quality        scan qualiter [150, 300, 600]
+  -d, --output_dir     directory in which to save the capture
+  -o, --output_name    name for the scanned file
+  USAGE: renamer -m sequence -i jpg -o jpg -pr New_Name -si 1 -pad 3
+EOF
+}
+print_help_sequence() {
+  help_header
+  help_sequence
+}
+print_help_all() {
+  help_header
+  help_general
+  help_sequence
+}
+print_help_by_mode() {
+  local mode="$1"
+  
+  if [[ "$mode" == `sequence_mode_name` ]]; then
+    print_help_sequence
+  else
+    print_help_all
+  fi
+}
+sequence_mode_name() {
+  echo "sequence"
+}
+is_mode_known() {
+  local selected_mode="$1"
+  [[ -z "$selected_mode" ]] && error_missing_function_args "${FUNCNAME[0]}" "$@"
+  local known_modes=(\
+    `sequence_mode_name` \
+  )
+  
+  local is_known=false
+  for mode in "${known_modes[@]}"; do
+    [[ "$selected_mode" == "$mode" ]] && is_known=true
+  done
+  
+  echo "$is_known"
+}
+read_verbose_args() {
+  [[ "$is_verbose" = true ]] && log_arguments "${FUNCNAME[0]}" "$@"
+  while [[ "$1" != "" ]]; do
+    case $1 in
+      -v | --verbose )
+        local is_verbose="true"
+        ;;
+    esac
+    shift
+  done
+ 
+  [[ -z "$is_verbose" ]] && local is_verbose="false"
+  echo "$is_verbose"
+}
+read_preview_args() {
+  [[ "$VERBOSE" = true ]] && log_arguments "${FUNCNAME[0]}" "$@"
+  while [[ "$1" != "" ]]; do
+    case $1 in
+      -p | --preview )
+        local is_preview_enabled="true"
+        ;;
+    esac
+    shift
+  done
+ 
+  [[ -z "$is_preview_enabled" ]] && local is_preview_enabled="false"
+  echo "$is_preview_enabled"
+}
+read_help_args() {
+  [[ "$VERBOSE" = true ]] && log_arguments "${FUNCNAME[0]}" "$@"
+  while [[ "$1" != "" ]]; do
+    case $1 in
+      -h | --help )
+        local should_show_help=true
+        ;;
+      -m | --mode )
+        shift
+        local mode=$1
+        ;;
+    esac
+    shift
+  done
+ 
+  if [[ "$should_show_help" == true ]]; then
+    print_help_by_mode "$mode"
+    exit
+  fi
+}
+read_mode_args() {
+  [[ "$VERBOSE" = true ]] && log_arguments "${FUNCNAME[0]}" "$@"
+  
+  while [[ "$1" != "" ]]; do
+    case $1 in
+      -m | --mode )
+        shift
+        local mode="$1"
+        ;;
+    esac
+    shift
+  done
+ 
+  [[ -z "$mode" ]] && error_missing_required_arg "mode" "${FUNCNAME[0]}"
+  [[ `is_mode_known "$mode"` == false ]] && error_mode_not_found "$mode" "${FUNCNAME[0]}"
+  echo "$mode"
+}
+read_sequence_args() {
+  [[ "$VERBOSE" = true ]] && log_arguments "${FUNCNAME[0]}" "$@"
+  while [[ "$1" != "" ]]; do
+    case $1 in
+      -i | --ext_in )
+        shift
+        local ext_in="$1"
+        ;;
+      -o | --ext_out )
+        shift
+        local ext_out="$1"
+        ;;
+      -pr | --prefix )
+        shift
+        local prefix="$1"
+        ;;
+      -si | --starting_index )
+        shift
+        local starting_index="$1"
+        ;;
+      -pad | --padding )
+        shift
+        local prefix="$1"
+        ;;
+    esac
+    shift
+  done
+  
+  [[ -z "$prefix" ]] && error_missing_required_arg "prefix"
+  [[ -z "$ext_in" ]] && error_missing_required_arg "ext_in"
+  [[ -z "$ext_out" ]] && local ext_out="$ext_in"
+  [[ -z "$starting_index" ]] && local starting_index=0
+  echo "$prefix" "$ext_in" "$ext_out" "$starting_index" "$pad"
+}
+increment() {
+  local index=$1
+  echo $(( index + 1 ))
+}
+pad() {
+  local index="$1"
+  local padding_zeros="$2"
+  echo `printf "%03d" $index`
+}
+rename_file() {
+  local input_file="$1"
+  local output_file="$2"
+  
+  if [[ ! -f "$input_file" ]]; then
+    echo "ERROR: File $input_file does not exist."
+  elif [[ -f "$output_file" ]]; then
+    echo "ERROR: File $output_file already exists."
+  else
+    echo "MOVING: $input_file >> $output_file" >&2
+    mv "$input_file" "$output_file"
+  fi
+}
+preview_file() {
+  local input_file="$1"
+  local output_file="$2"
+  echo "PREVIEW: $input_file >> $output_file" >&2
+}
+rename() {
+  local prefix="$1"
+  local ext_in="$2"
+  local ext_out="$3"
+  local index="$4"
+  local padding_zeros="$5"
+  for input_file in *.$ext_in; do
+    local index_padded=`pad $index "$padding_zeros"`
+    local output_file="${prefix}_${index_padded}.${ext_out}"
+    [[ "$PREVIEW" == "true" ]] \
+      && preview_file "$input_file" "$output_file" \
+      || rename_file "$input_file" "$output_file"
+    index=`increment $index`
+  done
+}
+preview_all() {
+  local prefix="$1"
+  local ext_in="$2"
+  local ext_out="$3"
+  local index="$4"
+  rename "$prefix" "$ext_in" "$ext_out" "$index" "true"
+}
+rename_all() {
+  local prefix="$1"
+  local ext_in="$2"
+  local ext_out="$3"
+  local index="$4"
+  local padding_zeros="$5"
+  rename "${prefix}_TMP" "$ext_in" "$ext_in" "$index" "$padding_zeros"
+  rename "${prefix}" "$ext_in" "$ext_out" "$index" "$padding_zeros"
+}
+sequence() {
+  local prefix="$1"
+  local ext_in="$2"
+  local ext_out="$3"
+  local starting_index="$4"
+  local padding_zeros="$5"
+  
+  [[ -z "$starting_index" ]] && local starting_index=0
+  [[ -z "$padding_zeros" ]] && local padding_zeros=3
+  [[ "$PREVIEW" == "true" ]] \
+    && preview_all "$prefix" "$ext_in" "$ext_out" "$starting_index" "$padding_zeros" \
+    || rename_all "$prefix" "$ext_in" "$ext_out" "$starting_index" "$padding_zeros"
+}
+run_sequence_mode() {
+  sequence `read_sequence_args "$@"`
+}
+main() {
+  local is_verbose_enabled=`read_verbose_args "$@"`
+  [[ "$is_verbose_enabled" == true ]] && VERBOSE=true
+  local is_preview_enabled=`read_preview_args "$@"`
+  [[ "$is_preview_enabled" == true ]] && PREVIEW=true
+  
+  local mode=`read_mode_args "$@"`
+  read_help_args "$@"
+  if [[ "$mode" == `sequence_mode_name` ]]; then
+    run_sequence_mode "$@"
+  else
+    print_help_by_mode "$mode"
+  fi
+}
+main "$@"
