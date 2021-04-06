@@ -114,7 +114,6 @@ main() {
   make_build_dir
   concatenate_files  "$output_name"
   remove_comments    "$output_name"
-  remove_empty_lines "$output_name"
   delete_sources     "$output_name"
   add_shebang        "$output_name"
 
